@@ -1,10 +1,12 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master  # Trigger on push to the master branch
   pull_request:
-    branches: [ master ]
+    branches:
+      - master  # Trigger on PR to the master branch
 
 jobs:
   build:
@@ -31,10 +33,11 @@ jobs:
 
       - name: Run tests
         run: docker run -e CI=true gracianohenrique/react-docker npm run test
+
   deploy:
     runs-on: ubuntu-latest
-    needs: build # Ensures build job runs before deploy job
-    # environment: production # (optional) Specify environment for deploy job
+    needs: build  # Ensure the build job runs before the deploy job
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -44,17 +47,28 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          aws-region: ${{ secrets.AWS_REGION_KEY }}
+          aws-region: ${{ secrets.AWS_REGION_KEY }}  # Use AWS region from GitHub secrets
 
       - name: Install EB CLI
         run: |
-          # Install the AWS Elastic Beanstalk CLI
-          pip install awsebcli
+          pip install awsebcli  # Install Elastic Beanstalk CLI
+
+      - name: Upload application to S3
+        run: |
+          # Create a zip file of the app to upload to S3
+          zip -r react-docker/app.zip .  # Ensure to zip the correct files from your project
+          aws s3 cp react-docker/app.zip s3://elasticbeanstalk-eu-north-1-992382678646/react-docker/app.zip --region eu-north-1  # Upload to S3
+
+      - name: Create Elastic Beanstalk application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name react-docker \
+            --version-label app-f481-241107_221000609684 \
+            --source-bundle S3Bucket="elasticbeanstalk-eu-north-1-992382678646",S3Key="react-docker/app.zip" \
+            --region eu-north-1  # Create the application version using the uploaded file
 
       - name: Deploy to Elastic Beanstalk
         run: |
-          # Elastic Beanstalk deploy command, ensure AWS CLI is configured
-          eb init -p docker react-docker --region eu-north-1
-          eb use Front-end-env
-          sleep 10  # Wait for 10 seconds to
-          eb deploy
+          eb init -p docker react-docker --region eu-north-1  # Initialize Elastic Beanstalk
+          eb use Front-end-env  # Select environment for deployment
+          eb deploy  # Deploy the app to Elastic Beanstalk
