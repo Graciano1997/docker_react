@@ -56,5 +56,5 @@ jobs:
           # Elastic Beanstalk deploy command, ensure AWS CLI is configured
           eb init -p docker react-docker --region eu-north-1
           eb use Front-end-env
-          sleep 10  # Wait for 10 seconds to ensure the application version is registered
+          sleep 10  # Wait for 10 seconds to
           eb deploy
