@@ -31,3 +31,24 @@ jobs:
 
       - name: Run tests
         run: docker run -e CI=true gracianohenrique/react-docker npm run test
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build # Ensures build job runs before deploy job
+    # environment: production # (optional) Specify environment for deploy job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: AWS CLI setup
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY }}
+          region: "eu-north-1"
+
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          # Elastic Beanstalk deploy command, ensure AWS CLI is configured
+          eb init -p docker react-docker --region eu-north-1
+          eb use Front-end-env
+          eb deploy
