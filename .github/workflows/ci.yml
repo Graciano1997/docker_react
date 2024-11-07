@@ -56,8 +56,8 @@ jobs:
       - name: Upload application to S3
         run: |
           # Create a zip file of the app to upload to S3
-          zip -r react-docker/app.zip .  # Ensure to zip the correct files from your project
-          aws s3 cp react-docker/app.zip s3://elasticbeanstalk-eu-north-1-992382678646/react-docker/app.zip --region eu-north-1  # Upload to S3
+          zip -r app.zip .  # Ensure to zip the correct files from your project
+          aws s3 cp app.zip s3://elasticbeanstalk-eu-north-1-992382678646/react-docker/app.zip --region eu-north-1  # Upload to S3
 
       - name: Create Elastic Beanstalk application version
         run: |
