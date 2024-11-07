@@ -45,7 +45,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ secrets.AWS_REGION_KEY }}
-          
+
       - name: Install EB CLI
         run: |
           # Install the AWS Elastic Beanstalk CLI
@@ -56,4 +56,4 @@ jobs:
           # Elastic Beanstalk deploy command, ensure AWS CLI is configured
           eb init -p docker react-docker --region eu-north-1
           eb use Front-end-env
-          eb deploy
+          eb deploy --no-verify
