@@ -27,20 +27,20 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION_KEY }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com
 
-      # Step 4: Build Docker image.
+      # Step 4: Build Docker image
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.ECR_REPOSITORY_NAME }} -f Dockerfile.dev . 
+          docker build -t ${{ secrets.ECR_REPOSITORY_NAME }} -f Dockerfile.dev .
 
-      # # Step 5: Tag Docker image
-      # - name: Tag Docker image
-      #   run: |
-      #     docker tag ${{ secrets.ECR_REPOSITORY_NAME }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+      # Step 5: Tag Docker image
+      - name: Tag Docker image
+        run: |
+          docker tag ${{ secrets.ECR_REPOSITORY_NAME }}:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
       # Step 6: Push Docker image to Amazon ECR
       - name: Push Docker image to Amazon ECR
         run: |
-          docker push ${{ AWS_ACCOUNT_ID }}.dkr.ecr.${{ AWS_REGION_KEY }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
       # Step 7: Deploy to Elastic Beanstalk
       - name: Deploy to Elastic Beanstalk
