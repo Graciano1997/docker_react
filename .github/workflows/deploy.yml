@@ -41,8 +41,7 @@ jobs:
       - name: Push Docker image to Amazon ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION_KEY }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com
-          docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION_KEY}.amazonaws.com/docker-react
-
+          docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION_KEY}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
       # Step 7: Deploy to Elastic Beanstalk
       - name: Deploy to Elastic Beanstalk
