@@ -1,74 +1,51 @@
-name: Deploy Frontend
+name: Deploy Docker to AWS Elastic Beanstalk
+
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    services:
-      docker:
-        image: docker:19.03.12
-        options: --privileged
-        ports:
-          - 2375:2375
-        env:
-          DOCKER_HOST: tcp://localhost:2375
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker image
-        run: docker build -t gracianohenrique/react-docker -f Dockerfile.dev .
-
-      - name: Run tests
-        run: docker run -e CI=true gracianohenrique/react-docker npm run test
-  
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: AWS CLI setup
+      # Step 2: Configure AWS credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ secrets.AWS_REGION_KEY }}
 
-      - name: Set version label
+      # Step 3: Log in to Amazon ECR
+      - name: Log in to Amazon ECR
         run: |
-          export VERSION_LABEL="app-$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
-          echo "VERSION_LABEL=$VERSION_LABEL" >> $GITHUB_ENV
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION_KEY }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com
 
-      - name: Install EB CLI
+      # Step 4: Build Docker image
+      - name: Build Docker image
         run: |
-          pip install awsebcli
+          docker build -t ${{ secrets.ECR_REPOSITORY_NAME }} -f Dockerfile.dev . 
 
-      - name: Generate deployment package
-        run: zip -r deploy.zip . -x '*.git*'
-
-      - name: Initialize EB CLI
+      # Step 5: Tag Docker image
+      - name: Tag Docker image
         run: |
-          eb init -p docker react-docker --region eu-north-1
+          docker tag ${{ secrets.ECR_REPOSITORY_NAME }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
-      - name: Select Elastic Beanstalk environment
+      # Step 6: Push Docker image to Amazon ECR
+      - name: Push Docker image to Amazon ECR
         run: |
-          eb use Docker-react-env
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION_KEY }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
-      - name: Show platform version
-        run: |
-          eb platform show
-          eb platform upgrade
-
+      # Step 7: Deploy to Elastic Beanstalk
       - name: Deploy to Elastic Beanstalk
         run: |
+          pip install awsebcli
+          eb init -p docker ${{ secrets.EB_APPLICATION_NAME }} --region ${{ secrets.AWS_REGION_KEY }}
+          eb use ${{ secrets.EB_ENVIRONMENT_NAME }}
           eb deploy
