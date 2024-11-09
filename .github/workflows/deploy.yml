@@ -56,10 +56,19 @@ jobs:
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
 
-      - name: Deploy to Elastic Beanstalk
+      - name: Initialize EB CLI
+        run: |
+          eb init -p docker react-docker --region eu-north-1
+
+      - name: Select Elastic Beanstalk environment
+        run: |
+          eb use Docker-react-env
+
+      - name: Show platform version
         run: |
           eb platform show
           eb platform upgrade
-          eb init -p docker react-docker --region eu-north-1
-          eb use Docker-react-env
+
+      - name: Deploy to Elastic Beanstalk
+        run: |
           eb deploy
