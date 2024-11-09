@@ -44,8 +44,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ secrets.AWS_REGION_KEY }}
 
-      # - name: Authenticate Docker
-        # run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set version label
+        run: |
+          export VERSION_LABEL="app-$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+          echo "VERSION_LABEL=$VERSION_LABEL" >> $GITHUB_ENV
 
       - name: Install EB CLI
         run: |
@@ -56,6 +58,8 @@ jobs:
 
       - name: Deploy to Elastic Beanstalk
         run: |
+          eb platform show
+          eb platform upgrade
           eb init -p docker react-docker --region eu-north-1
-          eb use Docker-react-env  
+          eb use Docker-react-env
           eb deploy
